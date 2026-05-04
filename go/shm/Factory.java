@@ -1,5 +1,6 @@
 package go.shm;
 
+
 import go.Direction;
 import java.util.Set;
 import java.util.Map;
@@ -10,17 +11,23 @@ public class Factory implements go.Factory {
 
     /** Création ou accès à un canal existant. */
     public <T> go.Channel<T> newChannel(String name) {
-        // TODO
+        // TODO : Proposition
+        return new Channel<T>(name);
     }
     
     /** Spécifie quels sont les canaux écoutés et la direction pour chacun. */
     public go.Selector newSelector(Map<go.Channel, Direction> channels) {
-        // TODO
+        // TODO : Proposition
+        return new Selector(channels);
+
     }
 
     /** Spécifie quels sont les canaux écoutés et la même direction pour tous. */
     public go.Selector newSelector(Set<go.Channel> channels, Direction direction) {
-        // TODO
+        // TODO : Proposition
+        Map<go.Channel, Direction> map =
+                channels.stream().collect(Collectors.toMap(Function.identity(), c -> direction));
+        return new Selector(map);
     }
 
 }
