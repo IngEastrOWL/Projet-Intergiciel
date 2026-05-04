@@ -8,12 +8,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class Selector implements go.Selector {
-
-<<<<<<< HEAD
+    
     private Map<Channel, Direction> channels;
     private Channel selectedChannel = null;
-=======
->>>>>>> 660d302 (change pas fou)
 
     public Selector(Map<Channel, Direction> channels) {
         this.channels = channels;
