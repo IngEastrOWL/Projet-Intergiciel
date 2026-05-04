@@ -25,6 +25,9 @@ public class Factory implements go.Factory {
     /** Spécifie quels sont les canaux écoutés et la même direction pour tous. */
     public go.Selector newSelector(Set<go.Channel> channels, Direction direction) {
         // TODO : Proposition
+
+        /* Ici on récupère les channels dans un stream et chaque élément du set devient une clé (Function.identity) du map et
+         chaque clés associé a la même valeur. (c -> direction) */
         Map<go.Channel, Direction> map =
                 channels.stream().collect(Collectors.toMap(Function.identity(), c -> direction));
         return new Selector(map);
