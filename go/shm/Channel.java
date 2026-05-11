@@ -3,76 +3,175 @@ package go.shm;
 import go.Direction;
 import go.Observer;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
 public class Channel<T> implements go.Channel<T> {
 
-    private String name;
-    private T value;
-    private boolean hasValue = false;
-    private int waitingCountOut = 0;
-    private int waitingCountIn = 0;
+    private final String name;
 
-    public ArrayList<Observer> observersIn = new ArrayList<>();
-    public ArrayList<Observer> observersOut = new ArrayList<>();
-
-    public Channel(String name) { this.name = name; }
-    
-    public synchronized void out(T v) {
-        try {
-            waitingCountOut++;
-            while (!observersOut.isEmpty()) {
-                observersOut.removeLast().update();
-            }
-            while (hasValue) { // tant que le canal est occupé par un out, on attend
-                wait();
-            }
-            value = v;
-            hasValue = true;
-            notifyAll();
-            waitingCountOut--;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            notifyAll();
-        }
+    private static class InRequest {
+        boolean matched = false;
+        Object value = null;
     }
-    
-    public synchronized T in() {
-        try {
-            waitingCountIn++;
-            while (!observersIn.isEmpty()) {
-                observersIn.removeLast().update();
-            }
-            while (!hasValue) { // tant que le canal est vide, on attend
-                wait();
-            }
-            T res = value;
-            hasValue = false;
-            notifyAll();
-            waitingCountIn--;
-            return res;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } finally {
-            notifyAll();
+
+    private static class OutRequest {
+        boolean matched = false;
+        boolean consumed = false;
+        Object value;
+
+        OutRequest(Object value) {
+            this.value = value;
         }
     }
 
-    public String getName() { return this.name; }
+    private final Deque<InRequest> waitingIns = new ArrayDeque<>();
+    private final Deque<OutRequest> waitingOuts = new ArrayDeque<>();
 
-    public synchronized void observe(Direction dir, Observer observer) {
-        if (dir == Direction.Out && waitingCountOut > 0) {
+    private final List<Observer> inObservers = new ArrayList<>();
+    private final List<Observer> outObservers = new ArrayList<>();
+
+    public Channel(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public T in() {
+        InRequest inReq;
+        OutRequest outReq = null;
+        List<Observer> toFire = null;
+
+        synchronized (this) {
+            if (!waitingOuts.isEmpty()) {
+                outReq = waitingOuts.removeFirst();
+                outReq.matched = true;
+                @SuppressWarnings("unchecked")
+                T v = (T) outReq.value;
+                outReq.consumed = true;
+                notifyAll();
+                return v;
+            }
+
+            inReq = new InRequest();
+            waitingIns.addLast(inReq);
+
+            if (!inObservers.isEmpty()) {
+                toFire = new ArrayList<>(inObservers);
+                inObservers.clear();
+            }
+
+            notifyAll();
+        }
+
+        if (toFire != null) {
+            for (Observer o : toFire) {
+                try {
+                    o.update();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        synchronized (this) {
+            try {
+                while (!inReq.matched) {
+                    wait();
+                }
+
+                @SuppressWarnings("unchecked")
+                T v = (T) inReq.value;
+                return v;
+
+            } catch (InterruptedException e) {
+                waitingIns.remove(inReq);
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void out(T v) {
+        OutRequest outReq;
+        List<Observer> toFire = null;
+
+        synchronized (this) {
+            if (!waitingIns.isEmpty()) {
+                InRequest inReq = waitingIns.removeFirst();
+                inReq.matched = true;
+                inReq.value = v;
+                notifyAll();
+                return;
+            }
+
+            outReq = new OutRequest(v);
+            waitingOuts.addLast(outReq);
+
+            if (!outObservers.isEmpty()) {
+                toFire = new ArrayList<>(outObservers);
+                outObservers.clear();
+            }
+
+            notifyAll();
+        }
+
+        if (toFire != null) {
+            for (Observer o : toFire) {
+                try {
+                    o.update();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        synchronized (this) {
+            try {
+                while (!outReq.consumed) {
+                    wait();
+                }
+            } catch (InterruptedException e) {
+                waitingOuts.remove(outReq);
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void observe(Direction direction, Observer observer) {
+        boolean immediate;
+
+        synchronized (this) {
+            if (direction == Direction.In) {
+                immediate = !waitingIns.isEmpty();
+                if (!immediate) {
+                    inObservers.add(observer);
+                }
+            } else {
+                immediate = !waitingOuts.isEmpty();
+                if (!immediate) {
+                    outObservers.add(observer);
+                }
+            }
+        }
+
+        if (immediate) {
             observer.update();
-        } else if (dir == Direction.In && waitingCountIn > 0) {
-            observer.update();
+        }
+    }
+
+    public synchronized boolean isReady(Direction dir) {
+        if (dir == Direction.In) {
+            return !waitingOuts.isEmpty();
         } else {
-            switch (dir){
-                case Direction.In -> observersIn.add(observer);
-                case Direction.Out -> observersOut.add(observer);
-            }
+            return !waitingIns.isEmpty();
         }
     }
-        
 }
