@@ -14,7 +14,7 @@ public class Factory implements go.Factory {
         // TODO : Proposition
         return new Channel<T>(name);
     }
-    
+
     /** Spécifie quels sont les canaux écoutés et la direction pour chacun. */
     public go.Selector newSelector(Map<go.Channel, Direction> channels) {
         // TODO : Proposition
@@ -34,4 +34,3 @@ public class Factory implements go.Factory {
     }
 
 }
-

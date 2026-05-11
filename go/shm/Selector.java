@@ -1,45 +1,70 @@
 package go.shm;
 
-import go.Direction;
 import go.Channel;
+import go.Direction;
 import go.Observer;
 
 import java.util.Map;
-import java.util.Set;
 
 public class Selector implements go.Selector {
-    
-    private Map<Channel, Direction> channels;
-    private Channel selectedChannel = null;
+
+    private final Map<Channel, Direction> channels;
+    private Channel selected = null;
 
     public Selector(Map<Channel, Direction> channels) {
         this.channels = channels;
     }
 
+    @Override
     public Channel select() {
         synchronized (this) {
-            for (Map.Entry<Channel, Direction> entry : channels.entrySet()) {
-                entry.getKey().observe(Direction.inverse(entry.getValue()), new Observer() {
-                    @Override
-                    public void update() {
-                        synchronized (Selector.this) {
-                            if (selectedChannel == null) {
-                                selectedChannel = entry.getKey();
-                                Selector.this.notify();
+            selected = null;
+
+            while (selected == null) {
+                for (Map.Entry<Channel, Direction> e : channels.entrySet()) {
+                    go.shm.Channel<?> ch = (go.shm.Channel<?>) e.getKey();
+                    if (ch.isReady(e.getValue())) {
+                        return e.getKey();
+                    }
+                }
+
+                Observer obs = () -> {
+                    synchronized (Selector.this) {
+                        if (selected != null) return;
+
+                        for (Map.Entry<Channel, Direction> e : channels.entrySet()) {
+                            go.shm.Channel<?> ch = (go.shm.Channel<?>) e.getKey();
+                            if (ch.isReady(e.getValue())) {
+                                selected = e.getKey();
+                                Selector.this.notifyAll();
+                                return;
                             }
                         }
                     }
-                });
+                };
+
+                for (Map.Entry<Channel, Direction> e : channels.entrySet()) {
+                    e.getKey().observe(Direction.inverse(e.getValue()), obs);
+                }
+
+                for (Map.Entry<Channel, Direction> e : channels.entrySet()) {
+                    go.shm.Channel<?> ch = (go.shm.Channel<?>) e.getKey();
+                    if (ch.isReady(e.getValue())) {
+                        return e.getKey();
+                    }
+                }
+
                 try {
-                    while (selectedChannel == null) {
+                    while (selected == null) {
                         wait();
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    return null;
                 }
             }
-            return selectedChannel;
+
+            return selected;
         }
     }
-
 }
