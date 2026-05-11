@@ -83,7 +83,6 @@ public class Channel<T> implements go.Channel<T> {
                 while (!inReq.matched) {
                     wait();
                 }
-
                 T v = (T) inReq.value;
                 return v;
 
