@@ -52,7 +52,6 @@ public class Channel<T> implements go.Channel<T> {
             if (!waitingOuts.isEmpty()) {
                 outReq = waitingOuts.removeFirst();
                 outReq.matched = true;
-                @SuppressWarnings("unchecked")
                 T v = (T) outReq.value;
                 outReq.consumed = true;
                 notifyAll();
@@ -85,7 +84,6 @@ public class Channel<T> implements go.Channel<T> {
                     wait();
                 }
 
-                @SuppressWarnings("unchecked")
                 T v = (T) inReq.value;
                 return v;
 
