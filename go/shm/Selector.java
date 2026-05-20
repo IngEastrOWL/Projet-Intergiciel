@@ -28,7 +28,7 @@ public class Selector implements go.Selector {
                     }
                 }
 
-                Observer obs = () -> {
+                                Observer obs = () -> {
                     synchronized (Selector.this) {
                         if (selected != null) return;
 

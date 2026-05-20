@@ -17,9 +17,7 @@ public class Factory implements go.Factory {
 
     /** Spécifie quels sont les canaux écoutés et la direction pour chacun. */
     public go.Selector newSelector(Map<go.Channel, Direction> channels) {
-        // TODO : Proposition
-        return new Selector(channels);
-
+        return new go.shm.Selector(channels);
     }
 
     /** Spécifie quels sont les canaux écoutés et la même direction pour tous. */

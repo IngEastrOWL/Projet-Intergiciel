@@ -8,9 +8,9 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
 
     private final Channel<Object> channel;
 
-    public RemoteChannelImpl(String name) throws RemoteException {
+    public RemoteChannelImpl(String name, go.shm.Factory factory) throws RemoteException {
         super();
-        this.channel = new Channel<>(name);
+        this.channel = (Channel<Object>) factory.newChannel(name);
     }
 
     @Override

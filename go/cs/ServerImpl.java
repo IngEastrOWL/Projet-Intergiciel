@@ -16,20 +16,35 @@ import java.util.Map;
  */
 public class ServerImpl extends UnicastRemoteObject implements RemoteChannelFactory {
     private final Map<String, RemoteChannel> channels = new HashMap<>();
+    private final go.shm.Factory shmFactory = new go.shm.Factory();
+
 
     protected ServerImpl() throws RemoteException {
+        super();
     }
 
     @Override
-    public RemoteChannel getChannel(String name) throws RemoteException {
+    public synchronized RemoteChannel getChannel(String name) throws RemoteException {
         if (channels.containsKey(name)) {
             return channels.get(name);
         } else {
-            RemoteChannel channel = new RemoteChannelImpl(name);
+            RemoteChannel channel = new RemoteChannelImpl<>(name, shmFactory);
             channels.put(name, channel);
             return channel;
         }
     }
+
+    @Override
+    public synchronized String select(Map<String, Direction> watched) throws RemoteException {
+        Map<go.Channel, Direction> map = new HashMap<>();
+        for (Map.Entry<String, Direction> e : watched.entrySet()) {
+            map.put(shmFactory.newChannel(e.getKey()), e.getValue());
+        }
+        go.Selector s = shmFactory.newSelector(map);
+        go.Channel c = s.select();
+        return c.getName();
+    }
+
 
     public static void main(String[] args) {
         try {

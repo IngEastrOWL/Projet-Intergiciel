@@ -39,9 +39,9 @@ public class Channel<T> implements go.Channel<T> {
         }
     }
 
+    @Override
     public String getName() {
-        // TODO
-        return null;
+        return name;
     }
 
     public void observe(Direction direction, Observer observer) {
