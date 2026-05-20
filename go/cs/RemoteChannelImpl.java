@@ -3,19 +3,18 @@ package go.cs;
 import go.Direction;
 import go.Observer;
 import go.shm.Channel;
-
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteChannel<T> {
 
-    private final Channel<T> channel;
-    private String name;
+    private final Channel<Object> channel;
+    private final String name;
 
     public RemoteChannelImpl(String name) throws RemoteException {
         super();
-        this.name = name;
         this.channel = new Channel<>(name);
+        this.name = name;
     }
 
     @Override
@@ -25,7 +24,7 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
 
     @Override
     public T in() throws RemoteException {
-        return channel.in();
+        return (T) channel.in();
     }
 
     @Override

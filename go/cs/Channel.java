@@ -39,6 +39,7 @@ public class Channel<T> implements go.Channel<T> {
         }
     }
 
+    @Override
     public String getName() {
         return name;
     }
