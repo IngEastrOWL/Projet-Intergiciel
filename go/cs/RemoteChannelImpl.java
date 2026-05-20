@@ -33,7 +33,18 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
     }
 
     @Override
-    public void observe(Direction direction, Observer observer) {
-        channel.observe(direction, observer);
+    public void observe(Direction direction, RemoteObserver observer) throws RemoteException {
+        channel.observe(direction, new Observer() {
+            @Override
+            public void update() {
+                try{
+                    observer.update();
+                }catch(RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
+
+
 }

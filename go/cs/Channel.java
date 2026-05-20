@@ -46,7 +46,7 @@ public class Channel<T> implements go.Channel<T> {
 
     public void observe(Direction direction, Observer observer) {
         try {
-            channel.observe(direction, observer);
+            channel.observe(direction, new RemoteObserverImpl(observer));
         } catch (Exception e) {
             throw new RuntimeException("observe error");
         }
