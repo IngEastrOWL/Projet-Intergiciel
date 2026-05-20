@@ -40,11 +40,14 @@ public class Channel<T> implements go.Channel<T> {
     }
 
     public String getName() {
-        // TODO
-        return null;
+        return name;
     }
 
     public void observe(Direction direction, Observer observer) {
-        // TODO
+        try {
+            channel.observe(direction, observer);
+        } catch (Exception e) {
+            throw new RuntimeException("observe error");
+        }
     }
 }

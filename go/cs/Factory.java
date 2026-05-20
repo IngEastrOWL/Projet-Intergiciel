@@ -2,10 +2,7 @@ package go.cs;
 
 import go.Direction;
 import go.Selector;
-import go.shm.Channel;
 
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.Set;
 import java.util.Map;
 import java.util.function.Function;
