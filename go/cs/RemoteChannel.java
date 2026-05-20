@@ -12,7 +12,7 @@ public interface RemoteChannel<T> extends Remote {
 
     public T in() throws RemoteException;
 
-    public String getName();
+    public String getName() throws RemoteException;
 
-    public void observe(Direction direction, Observer observer);
+    public void observe(Direction direction, Observer observer) throws RemoteException;
 }

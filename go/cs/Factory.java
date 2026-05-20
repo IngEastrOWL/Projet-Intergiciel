@@ -15,7 +15,6 @@ public class Factory implements go.Factory {
      * les appels suivants avec le même nom donneront accès au même canal.
      */
     public <T> go.Channel<T> newChannel(String name) {
-        // TODO
         return new go.cs.Channel<T>(name);
     }
     

@@ -9,6 +9,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implantation d'un serveur hébergeant des canaux.
@@ -17,7 +18,6 @@ import java.util.Map;
 public class ServerImpl extends UnicastRemoteObject implements RemoteChannelFactory {
     private final Map<String, RemoteChannel> channels = new HashMap<>();
     private final go.shm.Factory shmFactory = new go.shm.Factory();
-
 
     protected ServerImpl() throws RemoteException {
         super();
@@ -28,7 +28,7 @@ public class ServerImpl extends UnicastRemoteObject implements RemoteChannelFact
         if (channels.containsKey(name)) {
             return channels.get(name);
         } else {
-            RemoteChannel channel = new RemoteChannelImpl<>(name, shmFactory);
+            RemoteChannel channel = new RemoteChannelImpl<Objects>(name, shmFactory);
             channels.put(name, channel);
             return channel;
         }
