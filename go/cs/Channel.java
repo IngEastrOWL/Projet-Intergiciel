@@ -6,11 +6,15 @@ import go.Observer;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Channel<T> implements go.Channel<T> {
 
     private String name;
     private RemoteChannel channel;
+
+    private final List<RemoteObserver> observers = new ArrayList<>();
 
     public Channel(String name) {
         this.name = name;
@@ -46,7 +50,12 @@ public class Channel<T> implements go.Channel<T> {
 
     public void observe(Direction direction, Observer observer) {
         try {
-            channel.observe(direction, new RemoteObserverImpl(observer));
+            RemoteObserverImpl remoteObserver = new RemoteObserverImpl(observer);
+
+            synchronized (observers) {
+                observers.add(remoteObserver);
+            }
+            channel.observe(direction, remoteObserver);
         } catch (Exception e) {
             throw new RuntimeException("observe error");
         }

@@ -18,6 +18,7 @@ import java.util.Objects;
 public class ServerImpl extends UnicastRemoteObject implements RemoteChannelFactory {
     private final Map<String, RemoteChannel> channels = new HashMap<>();
     private final go.shm.Factory shmFactory = new go.shm.Factory();
+    private final Map<Map<String, Direction>, go.Selector> selectors = new HashMap<>();
 
     protected ServerImpl() throws RemoteException {
         super();
@@ -35,13 +36,27 @@ public class ServerImpl extends UnicastRemoteObject implements RemoteChannelFact
     }
 
     @Override
-    public synchronized String select(Map<String, Direction> watched) throws RemoteException {
-        Map<go.Channel, Direction> map = new HashMap<>();
-        for (Map.Entry<String, Direction> e : watched.entrySet()) {
-            map.put(shmFactory.newChannel(e.getKey()), e.getValue());
+    public String select(Map<String, Direction> watched) throws RemoteException {
+        go.Selector selec;
+
+        synchronized (this) {
+            if (selectors.containsKey(watched)) {
+                selec = selectors.get(watched);
+            } else {
+                Map<go.Channel, Direction> map = new HashMap<>();
+                for (Map.Entry<String, Direction> e : watched.entrySet()) {
+                    String name = e.getKey();
+                    if (!channels.containsKey(name)) {
+                        getChannel(name);
+                    }
+                    RemoteChannelImpl<?> channel = (RemoteChannelImpl<?>) channels.get(name);
+                    map.put(channel.getChannel(), e.getValue());
+                }
+                selec = shmFactory.newSelector(map);
+                selectors.put(watched, selec);
+            }
         }
-        go.Selector s = shmFactory.newSelector(map);
-        go.Channel c = s.select();
+        go.Channel c = selec.select();
         return c.getName();
     }
 
