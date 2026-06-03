@@ -23,13 +23,17 @@ public class ChannelSlave<T> implements go.Channel<T>, Serializable {
 
     @Override
     public void out(T v) {
+        // ouvre une connexion éphémère avec le master et initialise la sérialisation d'objets
         try (Socket socket = new Socket(host, port);
              ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
              ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+
+            // Envoi de la commande "OUT" suivie de la donnée à transmettre
             oos.writeObject("OUT");
             oos.writeObject(v);
             oos.flush();
 
+            // attente de l'acquittement du master
             String response = ois.readObject().toString();
             if (!response.equals("OK")) {
                 throw new RuntimeException("Erreur lors du traitement du out par le master");
@@ -41,12 +45,16 @@ public class ChannelSlave<T> implements go.Channel<T>, Serializable {
 
     @Override
     public T in() {
+        // Connexion éphémère pour demander une ressource au Master
         try (Socket socket = new Socket(host, port);
              ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
              ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+
+            // envoi de la requête de lecture "IN"
             oos.writeObject("IN");
             oos.flush();
 
+            // Si le master répond OK, on désérialise et retourne l'objet reçu
             String response = ois.readObject().toString();
             if (response.equals("OK")) {
                 return (T) ois.readObject();

@@ -13,6 +13,7 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
 
     public RemoteChannelImpl(String name, go.shm.Factory factory) throws RemoteException {
         super();
+        // recup ou crée le canal de communication en mémoire partagée
         this.channel = (Channel<T>) factory.newChannel(name);
         this.name = name;
     }
@@ -36,8 +37,11 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
         return this.channel;
     }
 
+    // observateur distant (RMI) au canal de mémoire partagée
     @Override
     public void observe(Direction direction, RemoteObserver observer) throws RemoteException {
+
+        // création d'un Observer local que le canal shm saura manipuler
         channel.observe(direction, new Observer() {
             @Override
             public void update() {
@@ -50,6 +54,4 @@ public class RemoteChannelImpl<T> extends UnicastRemoteObject implements RemoteC
             }
         });
     }
-
-
 }
